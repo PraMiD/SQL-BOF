@@ -16,6 +16,11 @@ void ShowError(unsigned int handletype, const SQLHANDLE* handle)
     }
 }
 
+void GetError(unsigned int handletype, const SQLHANDLE* handle, char *message, char *sqlstate, size_t size)
+{
+    ODBC32$SQLGetDiagRec(handletype, (SQLHANDLE)handle, 1, sqlstate, NULL, message, size, NULL);
+}
+
 //
 // Actual query execution
 //

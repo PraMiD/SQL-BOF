@@ -93,7 +93,7 @@ void ExecuteClrAssembly(char* server, char* database, char* link, char* imperson
 		}
 	}
 
-	//
+    //
 	// Check if the assembly hash already exists in sys.trusted_assemblies
 	// and drop it if it does
 	//
@@ -154,7 +154,16 @@ void ExecuteClrAssembly(char* server, char* database, char* link, char* imperson
 	//
 	internal_printf("[*] Creating a new custom assembly with the name \"%s\"\n", assemblyName);
 	if(!CreateAssembly(stmt, assemblyName, hexBytes, link, impersonate)) {
-		internal_printf("[!] Failed to create custom assembly. This probably happened as the assembly was uploaded before using a different name. See SQL error message\n");
+		SQLCHAR *sqlstate = intAlloc(1024 * sizeof(char));
+    	SQLCHAR *message = intAlloc(1024 * sizeof(char));
+
+		GetError(SQL_HANDLE_STMT, stmt, message, sqlstate, 1024);
+
+		internal_printf("[!] Failed to create assembly. Probably the assembly was already loaded using a different name.\nMessage: %s\n", message);
+		internal_printf("If this is the case, use 'DROP ASSEMBLY <name>; to delete it!\n");
+
+		intFree(sqlstate);
+		intFree(message);
 		goto END;
 	}
 	
@@ -176,7 +185,7 @@ void ExecuteClrAssembly(char* server, char* database, char* link, char* imperson
 	internal_printf("[*] Loading DLL into stored procedure \"%s\"\n", function);
 	CreateAssemblyStoredProc(stmt, assemblyName, function, FALSE, link, impersonate);
 
-	//
+    //
 	// Verify that the stored procedure exists before we continue
 	//
 	if (!AssemblyStoredProcExists(stmt, function, link, impersonate))
